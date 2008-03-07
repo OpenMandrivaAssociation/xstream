@@ -56,9 +56,7 @@ Patch1:         xstream-pom_xml.patch
 Patch2:         xstream-xstream-pom_xml.patch
 Patch3:         xstream-xstream-distribution-pom_xml.patch
 
-BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
-Vendor: %{?_vendorinfo:%{_vendorinfo}}%{!?_vendorinfo:%{_vendor}}
-Distribution: %{?_distribution:%{_distribution}}%{!?_distribution:%{_vendor}}
+BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root
 
 Requires(post):    jpackage-utils >= 0:1.7.2
 Requires(postun):  jpackage-utils >= 0:1.7.2
