@@ -73,6 +73,7 @@ BuildRequires:  java-devel = 0:1.5.0
 BuildRequires:  jpackage-utils >= 0:1.7.4
 BuildRequires:  ant >= 0:1.6.5
 BuildRequires:  ant-junit
+BuildRequires:  ant-trax
 BuildRequires:  junit >= 0:3.8.1
 %if %{with_maven}
 BuildRequires:  maven2 >= 2.0.4-10jpp
