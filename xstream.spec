@@ -1,3 +1,4 @@
+%{?_javapackages_macros:%_javapackages_macros}
 # Copyright statement from JPackage this file is derived from:
 
 # Copyright (c) 2000-2007, JPackage Project
@@ -36,10 +37,10 @@
 
 Name:           xstream
 Version:        1.3.1
-Release:        4
+Release:        8.1%{?dist}
 Summary:        Java XML serialization library
 
-Group:          Development/Java
+
 License:        BSD
 URL:            http://xstream.codehaus.org/
 Source0:        http://repository.codehaus.org/com/thoughtworks/%{name}/%{name}-distribution/%{version}/%{name}-distribution-%{version}-src.zip
@@ -96,7 +97,7 @@ are provided to help isolate and fix the problem.
 
 %package        javadoc
 Summary:        Javadoc for %{name}
-Group:          Development/Java
+
 Requires:       jpackage-utils
 
 %description    javadoc
@@ -154,40 +155,35 @@ install -d $RPM_BUILD_ROOT%{_javadocdir}
 # Main jar
 pushd xstream
 install -p -m644 target/xstream-SNAPSHOT.jar \
-        $RPM_BUILD_ROOT%{_javadir}/%{name}-%{version}.jar
-ln -s %{name}-%{version}.jar $RPM_BUILD_ROOT%{_javadir}/%{name}.jar
+        $RPM_BUILD_ROOT%{_javadir}/%{name}.jar
 
 # Benchmarks
 install -p -m644 target/xstream-benchmark-SNAPSHOT.jar \
-        $RPM_BUILD_ROOT%{_javadir}/%{name}-benchmark-%{version}.jar
-ln -s %{name}-benchmark-%{version}.jar $RPM_BUILD_ROOT%{_javadir}/%{name}-benchmark.jar
+        $RPM_BUILD_ROOT%{_javadir}/%{name}-benchmark.jar
 
 # API Documentation
-cp -pr target/javadoc $RPM_BUILD_ROOT%{_javadocdir}/%{name}-%{version}
+cp -pr target/javadoc $RPM_BUILD_ROOT%{_javadocdir}/%{name}
 popd
 
-# poms
+# POMs
 install -d -m 755 %{buildroot}%{_mavenpomdir}
 install -pm 644 pom.xml \
     %{buildroot}%{_mavenpomdir}/JPP-%{name}-parent.pom
-%add_to_maven_depmap com.thoughtworks.xstream %{name}-parent %{version} JPP %{name}-parent
+%add_maven_depmap JPP-%{name}-parent.pom
 
 install -pm 644 xstream/pom.xml \
     %{buildroot}%{_mavenpomdir}/JPP-%{name}.pom
-%add_to_maven_depmap com.thoughtworks.xstream %{name} %{version} JPP %{name}
+%add_maven_depmap
 
 
-%clean
-rm -rf $RPM_BUILD_ROOT
+# Workaround for RPM bug #646523 - can't change symlink to directory
+# TODO: Remove this in F-22
+%pretrans javadoc -p <lua>
+dir = "%{_javadocdir}/%{name}"
+dummy = posix.readlink(dir) and os.remove(dir)
 
-%post
-%update_maven_depmap
-
-%postun
-%update_maven_depmap
 
 %files
-%defattr(-,root,root,-)
 %{_javadir}/*.jar
 %{_mavenpomdir}/*
 %{_mavendepmapfragdir}/*
@@ -195,7 +191,79 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %files javadoc
-%defattr(-,root,root,-)
-%{_javadocdir}/%{name}-%{version}
+%{_javadocdir}/%{name}
+%doc LICENSE.txt
 
 
+%changelog
+* Sun Aug 04 2013 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.3.1-8
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_20_Mass_Rebuild
+
+* Fri Jul 12 2013 Mikolaj Izdebski <mizdebsk@redhat.com> - 1.3.1-7
+- Update to current packaging guidelines
+
+* Fri Jun 28 2013 Mikolaj Izdebski <mizdebsk@redhat.com> - 1.3.1-6
+- Rebuild to regenerate API documentation
+- Resolves: CVE-2013-1571
+
+* Fri Feb 15 2013 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.3.1-5
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_19_Mass_Rebuild
+
+* Sun Jul 22 2012 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.3.1-4
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_18_Mass_Rebuild
+
+* Sat Jan 14 2012 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.3.1-3
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_17_Mass_Rebuild
+
+* Tue Feb 08 2011 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.3.1-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_15_Mass_Rebuild
+
+* Mon Jun 14 2010 Alexander Kurtakov <akurtako@redhat.com> 1.3.1-1
+- Update to 1.3.1.
+- Install maven pom and depmap.
+
+* Wed Dec 02 2009 Lubomir Rintel <lkundrak@v3.sk> - 1.2.2-4
+- Cosmetic fixes
+
+* Fri Nov 27 2009 Lubomir Rintel <lkundrak@v3.sk> - 0:1.2.2-3
+- Drop gcj (suggested by Jochen Schmitt), we seem to need OpenJDK anyway
+- Fix -javadoc Require
+- Drop epoch
+
+* Sun Nov 01 2009 Lubomir Rintel <lkundrak@v3.sk> - 0:1.2.2-2
+- Greatly simplify for Fedora
+- Disable tests, we don't have all that's required to run them
+- Remove maven build
+
+* Fri Jul 20 2007 Ralph Apel <r.apel at r-apel.de> - 0:1.2.2-1jpp
+- Upgrade to 1.2.2
+- Build with maven2 by default
+- Add poms and depmap frags
+
+* Tue May 23 2006 Ralph Apel <r.apel at r-apel.de> - 0:1.1.3-1jpp
+- Upgrade to 1.1.3
+- Patched to work with bea
+
+* Mon Sep 13 2004 Ralph Apel <r.apel at r-apel.de> - 0:1.0.2-2jpp
+- Drop saxpath requirement
+- Require jaxen >= 0:1.1
+
+* Mon Aug 30 2004 Ralph Apel <r.apel at r-apel.de> - 0:1.0.2-1jpp
+- Upgrade to 1.0.2
+- Delete included binary jars
+- Change -Dbuild.sysclasspath "from only" to "first" (DynamicProxyTest)
+- Relax some versioned dependencies
+- Build with ant-1.6.2
+
+* Fri Aug 06 2004 Ralph Apel <r.apel at r-apel.de> - 0:1.0.1-2jpp
+- Upgrade to ant-1.6.X
+
+* Tue Jun 01 2004 Ralph Apel <r.apel at r-apel.de> - 0:1.0.1-1jpp
+- Upgrade to 1.0.1
+
+* Fri Feb 13 2004 Ralph Apel <r.apel at r-apel.de> - 0:0.3-1jpp
+- Upgrade to 0.3
+- Add manual subpackage
+
+* Mon Jan 19 2004 Ralph Apel <r.apel at r-apel.de> - 0:0.2-1jpp
+- First JPackage release
