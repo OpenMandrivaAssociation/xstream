@@ -37,9 +37,9 @@
 
 Name:           xstream
 Version:        1.3.1
-Release:        8.1%{?dist}
+Release:        8.2
 Summary:        Java XML serialization library
-
+Group:		Development/Java
 
 License:        BSD
 URL:            http://xstream.codehaus.org/
@@ -183,10 +183,8 @@ dir = "%{_javadocdir}/%{name}"
 dummy = posix.readlink(dir) and os.remove(dir)
 
 
-%files
+%files -f .mfiles
 %{_javadir}/*.jar
-%{_mavenpomdir}/*
-%{_mavendepmapfragdir}/*
 %doc LICENSE.txt
 
 
