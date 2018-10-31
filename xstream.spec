@@ -37,7 +37,7 @@
 
 Name:           xstream
 Version:        1.3.1
-Release:        8.3
+Release:        8.4
 Summary:        Java XML serialization library
 Group:		Development/Java
 
