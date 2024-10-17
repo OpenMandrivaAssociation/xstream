@@ -42,7 +42,7 @@ Summary:        Java XML serialization library
 Group:		Development/Java
 
 License:        BSD
-URL:            http://xstream.codehaus.org/
+URL:            https://xstream.codehaus.org/
 Source0:        http://repository.codehaus.org/com/thoughtworks/%{name}/%{name}-distribution/%{version}/%{name}-distribution-%{version}-src.zip
 
 BuildRoot:      %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
