@@ -1,267 +1,152 @@
-%{?_javapackages_macros:%_javapackages_macros}
-# Copyright statement from JPackage this file is derived from:
-
-# Copyright (c) 2000-2007, JPackage Project
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions
-# are met:
-#
-# 1. Redistributions of source code must retain the above copyright
-#    notice, this list of conditions and the following disclaimer.
-# 2. Redistributions in binary form must reproduce the above copyright
-#    notice, this list of conditions and the following disclaimer in the
-#    documentation and/or other materials provided with the
-#    distribution.
-# 3. Neither the name of the JPackage Project nor the names of its
-#    contributors may be used to endorse or promote products derived
-#    from this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-
-# Tests are disabled by default since we don't have
-# all the requirements in Fedora yet
-%bcond_with test
-
-Name:           xstream
-Version:        1.3.1
-Release:        8.4
-Summary:        Java XML serialization library
+Name:		xstream
+Version:	1.4.21
+Release:	1
+Summary:	Java object to XML serialization
 Group:		Development/Java
+License:	BSD
+URL:		https://x-stream.github.io/
+Source0:	https://github.com/x-stream/xstream/archive/refs/tags/XSTREAM_%(echo %{version} | tr . _).tar.gz#/xstream-%{version}.tar.gz
 
-License:        BSD
-URL:            https://xstream.codehaus.org/
-Source0:        http://repository.codehaus.org/com/thoughtworks/%{name}/%{name}-distribution/%{version}/%{name}-distribution-%{version}-src.zip
-
-BuildRoot:      %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
-
-BuildRequires:  jpackage-utils >= 0:1.7.2
-BuildRequires:  ant >= 0:1.6
-BuildRequires:  bea-stax >= 0:1.2.0
-BuildRequires:  bea-stax-api >= 0:1.0.1
-BuildRequires:  cglib >= 0:2.1.3
-BuildRequires:  dom4j >= 0:1.6.1
-BuildRequires:  jakarta-commons-lang >= 0:2.1
-BuildRequires:  jakarta-oro
-BuildRequires:  jdom >= 0:1.0
-BuildRequires:  jettison >= 0:1.0
-BuildRequires:  joda-time >= 0:1.2.1
-BuildRequires:  junit >= 0:3.8.1
-BuildRequires:  xom >= 0:1.0
-BuildRequires:  xpp3 >= 0:1.1.3.4
-BuildRequires:  unzip
-BuildRequires:  java-devel-openjdk
-%if %with test
-BuildRequires:  jmock >= 0:1.0.1
-BuildRequires:  wstx >= 0:3.2.0
-%endif
-Requires:       jpackage-utils
-Requires:       java
-Requires:       xpp3-minimal
-
-BuildArch:      noarch
-
+BuildArch:	noarch
+BuildRequires:	java-current-devel
+BuildRequires:	sysjar
+BuildRequires:	mvn(xmlpull:xmlpull)
+BuildRequires:	mvn(io.github.x-stream:mxparser)
+BuildRequires:	mvn(org.jdom:jdom2)
+BuildRequires:	mvn(org.dom4j:dom4j)
+BuildRequires:	mvn(joda-time:joda-time)
+BuildRequires:	mvn(org.codehaus.jettison:jettison)
+BuildRequires:	mvn(javax.xml.bind:jaxb-api)
+BuildRequires:	mvn(javax.activation:activation)
 
 %description
-XStream is a simple library to serialize objects to XML 
-and back again. A high level facade is supplied that 
-simplifies common use cases. Custom objects can be serialized 
-without need for specifying mappings. Speed and low memory 
-footprint are a crucial part of the design, making it suitable 
-for large object graphs or systems with high message throughput. 
-No information is duplicated that can be obtained via reflection. 
-This results in XML that is easier to read for humans and more 
-compact than native Java serialization. XStream serializes internal 
-fields, including private and final. Supports non-public and inner 
-classes. Classes are not required to have default constructor. 
-Duplicate references encountered in the object-model will be 
-maintained. Supports circular references. By implementing an 
-interface, XStream can serialize directly to/from any tree 
-structure (not just XML). Strategies can be registered allowing 
-customization of how particular types are represented as XML. 
-When an exception occurs due to malformed XML, detailed diagnostics 
-are provided to help isolate and fix the problem.
+XStream serializes Java objects to XML and back. Groovy 3.0.22 calls
+XStream(StaxDriver) from XStreamUtils when groovy.ast=xml, and the
+no-arg constructor uses an XmlPull driver. Gradle's default
+distribution is that Groovy. 1.4.21 fixes CVE-2024-47072, a stack
+overflow in BinaryDriver, and adds a WeakHashMap converter that does
+not touch the ReentrantLock added in Java 19.
 
-
-%package        javadoc
-Summary:        Javadoc for %{name}
-
-Requires:       jpackage-utils
-
-%description    javadoc
-%{name} API documentation.
-
+The Hibernate and JMH modules are not built. Drivers for libraries
+cooker does not ship are left out: xpp3, kxml2, JDOM 1, XOM, CGLIB,
+Woodstox, and the BEA StAX driver. The sun.misc.Unsafe reflection
+providers are left out because a --release 8 compile cannot see that
+package. PureJavaReflectionProvider remains.
 
 %prep
-%setup -qn %{name}-%{version}
-find . -name "*.jar" -delete
-
-%if %with test
-# This test requires megginson's sax2
-rm -f xstream/src/test/com/thoughtworks/xstream/io/xml/SaxWriterTest.java
-%endif
-
+%autosetup -n xstream-XSTREAM_%(echo %{version} | tr . _)
 
 %build
-# Replace bundled tars
-pushd xstream/lib
-ln -sf $(build-classpath cglib)
-ln -sf $(build-classpath commons-lang)
-ln -sf $(build-classpath dom4j)
-ln -sf $(build-classpath jdom)
-ln -sf $(build-classpath jettison)
-ln -sf $(build-classpath joda-time)
-ln -sf $(build-classpath junit)
-ln -sf $(build-classpath oro)
-ln -sf $(build-classpath bea-stax-ri)
-ln -sf $(build-classpath bea-stax-api)
-ln -sf $(build-classpath xom)
-ln -sf $(build-classpath xpp3)
-%if %with test
-ln -sf $(build-classpath jmock)
-ln -sf $(build-classpath wstx/wstx-asl)
-%endif
-popd
+export JAVA_HOME=%{_jvmdir}/java-openjdk
+export PATH=$JAVA_HOME/bin:$PATH
+find xstream/src/java -name '*.java' | grep -v -E \
+	'/(BEAStaxDriver|WstxDriver|Xpp3Driver|Xpp3DomDriver|Xpp3DomBuilder|KXml2Driver|KXml2DomDriver|JDomDriver|JDomReader|JDomWriter|XomDriver|XomReader|XomWriter|CGLIBEnhancedConverter|CGLIBMapper|CGLIBProxyTypePermission|SunLimitedUnsafeReflectionProvider|SunUnsafeReflectionProvider|Sun14ReflectionProvider)\.java$' \
+	> sources.list
+mkdir -p classes
+javac --release 8 -encoding UTF-8 -Xlint:-options \
+	-cp %{_javadir}/xmlpull.jar:%{_javadir}/mxparser.jar:%{_javadir}/jdom2/jdom2.jar:%{_javadir}/dom4j.jar:%{_javadir}/joda-time.jar:%{_javadir}/jettison.jar:%{_javadir}/javax.xml.bind.jar:%{_javadir}/javax.activation.jar \
+	-d classes @sources.list
+jar cf %{name}.jar -C classes .
+cat > %{name}.pom <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.thoughtworks.xstream</groupId>
+  <artifactId>xstream</artifactId>
+  <version>%{version}</version>
+  <name>XStream Core</name>
+  <description>Serialize Java objects to XML. Links the system MXParser.</description>
+  <url>https://x-stream.github.io/</url>
+  <licenses>
+    <license>
+      <name>BSD-3-Clause</name>
+      <url>https://raw.githubusercontent.com/x-stream/xstream/XSTREAM_1_4_21/LICENSE.txt</url>
+    </license>
+  </licenses>
+  <dependencies>
+    <dependency>
+      <groupId>io.github.x-stream</groupId>
+      <artifactId>mxparser</artifactId>
+      <version>1.2.3</version>
+    </dependency>
+    <dependency>
+      <groupId>xmlpull</groupId>
+      <artifactId>xmlpull</artifactId>
+      <version>1.1.3.4c</version>
+    </dependency>
+    <dependency>
+      <groupId>org.jdom</groupId>
+      <artifactId>jdom2</artifactId>
+      <version>2.0.6.1</version>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>org.dom4j</groupId>
+      <artifactId>dom4j</artifactId>
+      <version>2.2.0</version>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>joda-time</groupId>
+      <artifactId>joda-time</artifactId>
+      <version>2.15.1</version>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>org.codehaus.jettison</groupId>
+      <artifactId>jettison</artifactId>
+      <version>1.5.7</version>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>javax.xml.bind</groupId>
+      <artifactId>jaxb-api</artifactId>
+      <version>2.4.0</version>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>javax.activation</groupId>
+      <artifactId>activation</artifactId>
+      <version>1.2.0</version>
+      <optional>true</optional>
+    </dependency>
+  </dependencies>
+</project>
+EOF
 
-# Build
-pushd xstream
-%if %with test
-ant library javadoc
-%else
-ant benchmark:compile jar javadoc
-%endif
-popd
-
+%check
+export JAVA_HOME=%{_jvmdir}/java-openjdk
+export PATH=$JAVA_HOME/bin:$PATH
+mkdir -p check
+cat > check/Smoke.java <<'END'
+import com.thoughtworks.xstream.XStream;
+import com.thoughtworks.xstream.io.xml.StaxDriver;
+public class Smoke {
+	static void round(XStream xs, String label) {
+		xs.allowTypes(new Class[]{String.class});
+		Object back = xs.fromXML(xs.toXML("gradle"));
+		if (!"gradle".equals(back)) {
+			throw new AssertionError(label);
+		}
+		System.out.println(label + " ok");
+	}
+	public static void main(String[] args) {
+		round(new XStream(new StaxDriver()), "stax");
+		round(new XStream(), "default");
+	}
+}
+END
+javac --release 8 -encoding UTF-8 -Xlint:-options -cp %{name}.jar -d check check/Smoke.java
+out=$(java -cp check:%{name}.jar:%{_javadir}/xmlpull.jar:%{_javadir}/mxparser.jar Smoke)
+printf '%s\n' "$out"
+printf '%s\n' "$out" | grep -q 'stax ok'
+printf '%s\n' "$out" | grep -q 'default ok'
 
 %install
-rm -rf $RPM_BUILD_ROOT
-
-# Directory structure
-install -d $RPM_BUILD_ROOT%{_javadir}
-install -d $RPM_BUILD_ROOT%{_javadocdir}
-
-# Main jar
-pushd xstream
-install -p -m644 target/xstream-SNAPSHOT.jar \
-        $RPM_BUILD_ROOT%{_javadir}/%{name}.jar
-
-# Benchmarks
-install -p -m644 target/xstream-benchmark-SNAPSHOT.jar \
-        $RPM_BUILD_ROOT%{_javadir}/%{name}-benchmark.jar
-
-# API Documentation
-cp -pr target/javadoc $RPM_BUILD_ROOT%{_javadocdir}/%{name}
-popd
-
-# POMs
-install -d -m 755 %{buildroot}%{_mavenpomdir}
-install -pm 644 pom.xml \
-    %{buildroot}%{_mavenpomdir}/JPP-%{name}-parent.pom
-%add_maven_depmap JPP-%{name}-parent.pom
-
-install -pm 644 xstream/pom.xml \
-    %{buildroot}%{_mavenpomdir}/JPP-%{name}.pom
-%add_maven_depmap
-
-
-# Workaround for RPM bug #646523 - can't change symlink to directory
-# TODO: Remove this in F-22
-%pretrans javadoc -p <lua>
-dir = "%{_javadocdir}/%{name}"
-dummy = posix.readlink(dir) and os.remove(dir)
-
+sysjar install --buildroot %{buildroot} \
+	--artifact %{name}.pom:%{name}.jar \
+	--file-name %{name} \
+	--filelist .mfiles
 
 %files -f .mfiles
-%{_javadir}/*.jar
-%doc LICENSE.txt
-
-
-%files javadoc
-%{_javadocdir}/%{name}
-%doc LICENSE.txt
-
-
-%changelog
-* Sun Aug 04 2013 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.3.1-8
-- Rebuilt for https://fedoraproject.org/wiki/Fedora_20_Mass_Rebuild
-
-* Fri Jul 12 2013 Mikolaj Izdebski <mizdebsk@redhat.com> - 1.3.1-7
-- Update to current packaging guidelines
-
-* Fri Jun 28 2013 Mikolaj Izdebski <mizdebsk@redhat.com> - 1.3.1-6
-- Rebuild to regenerate API documentation
-- Resolves: CVE-2013-1571
-
-* Fri Feb 15 2013 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.3.1-5
-- Rebuilt for https://fedoraproject.org/wiki/Fedora_19_Mass_Rebuild
-
-* Sun Jul 22 2012 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.3.1-4
-- Rebuilt for https://fedoraproject.org/wiki/Fedora_18_Mass_Rebuild
-
-* Sat Jan 14 2012 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.3.1-3
-- Rebuilt for https://fedoraproject.org/wiki/Fedora_17_Mass_Rebuild
-
-* Tue Feb 08 2011 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.3.1-2
-- Rebuilt for https://fedoraproject.org/wiki/Fedora_15_Mass_Rebuild
-
-* Mon Jun 14 2010 Alexander Kurtakov <akurtako@redhat.com> 1.3.1-1
-- Update to 1.3.1.
-- Install maven pom and depmap.
-
-* Wed Dec 02 2009 Lubomir Rintel <lkundrak@v3.sk> - 1.2.2-4
-- Cosmetic fixes
-
-* Fri Nov 27 2009 Lubomir Rintel <lkundrak@v3.sk> - 0:1.2.2-3
-- Drop gcj (suggested by Jochen Schmitt), we seem to need OpenJDK anyway
-- Fix -javadoc Require
-- Drop epoch
-
-* Sun Nov 01 2009 Lubomir Rintel <lkundrak@v3.sk> - 0:1.2.2-2
-- Greatly simplify for Fedora
-- Disable tests, we don't have all that's required to run them
-- Remove maven build
-
-* Fri Jul 20 2007 Ralph Apel <r.apel at r-apel.de> - 0:1.2.2-1jpp
-- Upgrade to 1.2.2
-- Build with maven2 by default
-- Add poms and depmap frags
-
-* Tue May 23 2006 Ralph Apel <r.apel at r-apel.de> - 0:1.1.3-1jpp
-- Upgrade to 1.1.3
-- Patched to work with bea
-
-* Mon Sep 13 2004 Ralph Apel <r.apel at r-apel.de> - 0:1.0.2-2jpp
-- Drop saxpath requirement
-- Require jaxen >= 0:1.1
-
-* Mon Aug 30 2004 Ralph Apel <r.apel at r-apel.de> - 0:1.0.2-1jpp
-- Upgrade to 1.0.2
-- Delete included binary jars
-- Change -Dbuild.sysclasspath "from only" to "first" (DynamicProxyTest)
-- Relax some versioned dependencies
-- Build with ant-1.6.2
-
-* Fri Aug 06 2004 Ralph Apel <r.apel at r-apel.de> - 0:1.0.1-2jpp
-- Upgrade to ant-1.6.X
-
-* Tue Jun 01 2004 Ralph Apel <r.apel at r-apel.de> - 0:1.0.1-1jpp
-- Upgrade to 1.0.1
-
-* Fri Feb 13 2004 Ralph Apel <r.apel at r-apel.de> - 0:0.3-1jpp
-- Upgrade to 0.3
-- Add manual subpackage
-
-* Mon Jan 19 2004 Ralph Apel <r.apel at r-apel.de> - 0:0.2-1jpp
-- First JPackage release
+%doc LICENSE.txt README.md
